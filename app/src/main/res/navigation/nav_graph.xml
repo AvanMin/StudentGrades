@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.studentgrades.ui.home.HomeFragment"
+        android:label="Главная">
+        <action
+            android:id="@+id/action_home_to_disciplines"
+            app:destination="@id/disciplinesFragment" />
+        <action
+            android:id="@+id/action_home_to_dynamics"
+            app:destination="@id/dynamicsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/disciplinesFragment"
+        android:name="com.example.studentgrades.ui.disciplines.DisciplinesFragment"
+        android:label="Дисциплины">
+        <action
+            android:id="@+id/action_disciplines_to_grades"
+            app:destination="@id/disciplineGradesFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/disciplineGradesFragment"
+        android:name="com.example.studentgrades.ui.grades.DisciplineGradesFragment"
+        android:label="Оценки">
+        <argument
+            android:name="disciplineId"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_grades_to_add_edit"
+            app:destination="@id/addEditGradeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addEditGradeFragment"
+        android:name="com.example.studentgrades.ui.addedit.AddEditGradeFragment"
+        android:label="Оценка">
+        <argument
+            android:name="disciplineId"
+            app:argType="long" />
+        <argument
+            android:name="gradeId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/dynamicsFragment"
+        android:name="com.example.studentgrades.ui.dynamics.DynamicsFragment"
+        android:label="Динамика" />
+
+</navigation>
