@@ -1,4 +1,4 @@
-package com.example.studentgrades.data.local
+package com.example.studentgrades.data
 
 import com.example.studentgrades.data.model.Discipline
 import com.example.studentgrades.data.model.Grade

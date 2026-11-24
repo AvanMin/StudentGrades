@@ -1,19 +1,317 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@color/bg_screen"
+    android:fillViewport="true"
+    android:padding="18dp">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Добавление / Редактирование оценки"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:orientation="vertical">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout
+            android:id="@+id/headerBack"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Назад"
+                android:padding="12dp"
+                android:src="@drawable/ic_arrow_back" />
+
+            <TextView
+                android:id="@+id/tvFormTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Добавить оценку"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="Дисциплина"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input_rounded"
+            android:paddingHorizontal="12dp">
+
+            <Spinner
+                android:id="@+id/spinnerDiscipline"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Оценка"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Выберите от 2 до 5"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etGradeValue"
+                android:layout_width="76dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_input_rounded"
+                android:gravity="center"
+                android:hint="5"
+                android:inputType="number"
+                android:maxLength="1"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGrade2"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="2"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/bg_card"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/stroke_subtle" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGrade3"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="3"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/bg_card"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/stroke_subtle" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGrade4"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="4"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/bg_card"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/stroke_subtle" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGrade5"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="5"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/bg_card"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/stroke_subtle" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvGradeError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Оценка от 2 до 5"
+            android:textColor="@color/grade_2_red"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Дата"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etDate"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input_rounded"
+            android:clickable="true"
+            android:drawableEnd="@android:drawable/arrow_down_float"
+            android:focusable="false"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Тип работы"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTypeControl"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Контрольная"
+                android:textAllCaps="false"
+                app:cornerRadius="14dp"
+                app:strokeColor="@color/stroke_subtle" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTypePractice"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Практическая"
+                android:textAllCaps="false"
+                app:cornerRadius="14dp"
+                app:strokeColor="@color/stroke_subtle" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTypeLab"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Лабораторная"
+                android:textAllCaps="false"
+                app:cornerRadius="14dp"
+                app:strokeColor="@color/stroke_subtle" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTypeAnswer"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Ответ"
+                android:textAllCaps="false"
+                app:cornerRadius="14dp"
+                app:strokeColor="@color/stroke_subtle" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Комментарий"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etComment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input_rounded"
+            android:gravity="top|start"
+            android:hint="Например, тема работы"
+            android:inputType="textCapSentences|textMultiLine"
+            android:minLines="3"
+            android:padding="14dp"
+            android:textColorHint="@color/text_hint"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveGrade"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="24dp"
+            android:text="Сохранить"
+            android:textAllCaps="false"
+            android:textSize="15sp"
+            app:backgroundTint="@color/primary_blue"
+            app:cornerRadius="26dp" />
+
+        <TextView
+            android:id="@+id/btnCancel"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Отмена"
+            android:textColor="@color/primary_blue"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</ScrollView>

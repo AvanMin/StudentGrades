@@ -7,43 +7,35 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.studentgrades.ui.home.HomeFragment"
-        android:label="Главная">
+        android:label="Оценки">
         <action
-            android:id="@+id/action_home_to_disciplines"
-            app:destination="@id/disciplinesFragment" />
-        <action
-            android:id="@+id/action_home_to_dynamics"
-            app:destination="@id/dynamicsFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/disciplinesFragment"
-        android:name="com.example.studentgrades.ui.disciplines.DisciplinesFragment"
-        android:label="Дисциплины">
-        <action
-            android:id="@+id/action_disciplines_to_grades"
+            android:id="@+id/action_homeFragment_to_disciplineGradesFragment"
             app:destination="@id/disciplineGradesFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_addEditGradeFragment"
+            app:destination="@id/addEditGradeFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/disciplineGradesFragment"
         android:name="com.example.studentgrades.ui.grades.DisciplineGradesFragment"
-        android:label="Оценки">
+        android:label="Дисциплина">
         <argument
             android:name="disciplineId"
             app:argType="long" />
         <action
-            android:id="@+id/action_grades_to_add_edit"
+            android:id="@+id/action_disciplineGradesFragment_to_addEditGradeFragment"
             app:destination="@id/addEditGradeFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/addEditGradeFragment"
         android:name="com.example.studentgrades.ui.addedit.AddEditGradeFragment"
-        android:label="Оценка">
+        android:label="Добавить оценку">
         <argument
             android:name="disciplineId"
-            app:argType="long" />
+            app:argType="long"
+            android:defaultValue="-1L" />
         <argument
             android:name="gradeId"
             app:argType="long"
@@ -55,4 +47,8 @@
         android:name="com.example.studentgrades.ui.dynamics.DynamicsFragment"
         android:label="Динамика" />
 
+    <fragment
+        android:id="@+id/goalFragment"
+        android:name="com.example.studentgrades.ui.dynamics.DynamicsFragment"
+        android:label="Цель" />
 </navigation>

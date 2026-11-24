@@ -1,12 +1,14 @@
 package com.example.studentgrades
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.example.studentgrades.databinding.ActivityMainBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,14 +19,26 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Инициализация локальной базы данных Room при старте приложения
-        val repository = (application as StudentGradesApp).repository
-        lifecycleScope.launch(Dispatchers.IO) {
-            repository.getAllDisciplines()
+        // Автоматический отступ от верхней шторки (статус-бара) и нижней панели жестов
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(
+                top = systemBars.top,
+                bottom = systemBars.bottom
+            )
+            insets
         }
 
-        // Навигация подключена через nav_graph, ActionBar пока не используем
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+
+        binding.bottomNav.setupWithNavController(navController)
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val showBottomBar = destination.id != R.id.addEditGradeFragment
+            binding.bottomNav.visibility = if (showBottomBar) View.VISIBLE else View.GONE
+            binding.bottomNavDivider.visibility = if (showBottomBar) View.VISIBLE else View.GONE
+        }
     }
 }

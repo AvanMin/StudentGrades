@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="bg_screen">#F6F8FB</color>
+    <color name="bg_card">#FFFFFF</color>
+    <color name="stroke_subtle">#E5E7EB</color>
+    <color name="primary_blue">#2563EB</color>
+    <color name="primary_blue_light">#EBF2FE</color>
+    <color name="text_primary">#111827</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="text_hint">#9CA3AF</color>
+    <color name="grade_5_green">#15803D</color>
+    <color name="grade_5_bg">#DCFCE7</color>
+    <color name="grade_4_blue">#1D4ED8</color>
+    <color name="grade_4_bg">#DBEAFE</color>
+    <color name="grade_3_orange">#D97706</color>
+    <color name="grade_3_bg">#FEF3C7</color>
+    <color name="grade_2_red">#DC2626</color>
+    <color name="grade_2_bg">#FEE2E2</color>
 </resources>

@@ -1,7 +1,7 @@
 package com.example.studentgrades
 
 import android.app.Application
-import com.example.studentgrades.data.local.AppDatabase
+import com.example.studentgrades.data.AppDatabase
 import com.example.studentgrades.data.repository.StudentGradesRepository
 
 class StudentGradesApp : Application() {

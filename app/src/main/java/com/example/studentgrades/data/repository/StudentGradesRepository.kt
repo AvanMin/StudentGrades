@@ -1,7 +1,7 @@
 package com.example.studentgrades.data.repository
 
-import com.example.studentgrades.data.local.DisciplineDao
-import com.example.studentgrades.data.local.GradeDao
+import com.example.studentgrades.data.DisciplineDao
+import com.example.studentgrades.data.GradeDao
 import com.example.studentgrades.data.model.Discipline
 import com.example.studentgrades.data.model.DisciplineWithGrades
 import com.example.studentgrades.data.model.Grade

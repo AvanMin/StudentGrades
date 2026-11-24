@@ -1,4 +1,4 @@
-package com.example.studentgrades.data.local
+package com.example.studentgrades.data
 
 import androidx.room.Dao
 import androidx.room.Delete
