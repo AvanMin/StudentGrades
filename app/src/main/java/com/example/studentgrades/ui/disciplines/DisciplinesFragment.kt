@@ -20,6 +20,7 @@ class DisciplinesFragment : Fragment() {
     private var _binding: FragmentDisciplinesBinding? = null
     private val binding get() = _binding!!
 
+    // Создание разметки экрана из XML
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -32,6 +33,7 @@ class DisciplinesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Настройка списка и переход к оценкам при нажатии на предмет
         val adapter = DisciplinesAdapter { discipline ->
             val args = bundleOf("disciplineId" to discipline.id)
             findNavController().navigate(R.id.disciplineGradesFragment, args)
@@ -40,6 +42,7 @@ class DisciplinesFragment : Fragment() {
 
         val db = AppDatabase.getInstance(requireContext().applicationContext)
 
+        // Подписка на обновления дисциплин и оценок из БД
         viewLifecycleOwner.lifecycleScope.launch {
             db.disciplineDao().observeAllWithGrades().collect { items ->
                 val uiItems = items.map { dwg ->
@@ -48,6 +51,7 @@ class DisciplinesFragment : Fragment() {
                     DisciplineUiItem(dwg.discipline, grades.size, avg)
                 }
 
+                // Показываем заглушку, если предметов нет, иначе — обновляем список
                 if (uiItems.isEmpty()) {
                     binding.tvEmptyDisciplines.visibility = View.VISIBLE
                     binding.rvDisciplines.visibility = View.GONE
@@ -60,6 +64,7 @@ class DisciplinesFragment : Fragment() {
         }
     }
 
+    // Очистка binding при закрытии экрана
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

@@ -19,10 +19,12 @@ class GoalFragment : Fragment() {
     private var _binding: FragmentGoalBinding? = null
     private val binding get() = _binding!!
 
+    // Переменные для хранения текущего количества, суммы и среднего балла всех оценок
     private var currentCount: Int = 0
     private var currentSum: Int = 0
     private var currentAvg: Double = 0.0
 
+    // Создание разметки экрана из XML
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -33,10 +35,12 @@ class GoalFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Возврат на предыдущий экран по нажатию на кнопку «Назад»
         binding.btnBack.setOnClickListener {
             findNavController().popBackStack()
         }
 
+        // Запуск расчёта целевой оценки по нажатию на кнопку «Рассчитать»
         binding.btnCalculate.setOnClickListener {
             calculateGoal()
         }
@@ -44,6 +48,7 @@ class GoalFragment : Fragment() {
         observeGrades()
     }
 
+    // Подписка на оценки из базы данных для расчёта текущей статистики
     private fun observeGrades() {
         val db = AppDatabase.getInstance(requireContext().applicationContext)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -52,6 +57,7 @@ class GoalFragment : Fragment() {
                 currentSum = grades.sumOf { it.value }
                 currentAvg = if (currentCount == 0) 0.0 else currentSum.toDouble() / currentCount
 
+                // Вывод текущего среднего балла, количества оценок и их общей суммы
                 binding.tvCurrentAvg.text = if (currentCount == 0) "—"
                 else String.format(Locale.US, "%.2f", currentAvg)
                 binding.tvGradesCount.text = formatGradesWord(currentCount)
@@ -65,7 +71,9 @@ class GoalFragment : Fragment() {
         }
     }
 
+    // Расчёт минимальной следующей оценки для достижения желаемого среднего балла
     private fun calculateGoal() {
+        // Считываем введённое число, заменяя запятую на точку, и проверяем диапазон 1.00–5.00
         val rawInput = binding.etTargetAvg.text.toString().replace(',', '.').trim()
         val target = rawInput.toDoubleOrNull()
 
@@ -120,6 +128,7 @@ class GoalFragment : Fragment() {
 
             // Случай 3: Цель достижима (нужна оценка от 2 до 5)
             else -> {
+                // Округляем требуемую оценку вверх до ближайшего целого балла (2–5) и считаем итоговый средний
                 val requiredIntGrade = ceil(exactNeeded - 0.0001).toInt().coerceIn(2, 5)
                 val resultingAvg = (currentSum + requiredIntGrade).toDouble() / (currentCount + 1)
                 val resultingFormatted = String.format(Locale.US, "%.2f", resultingAvg)
@@ -133,6 +142,7 @@ class GoalFragment : Fragment() {
         }
     }
 
+    // Склонение слова «оценка» в зависимости от числа
     private fun formatGradesWord(count: Int): String {
         val mod10 = count % 10
         val mod100 = count % 100
@@ -145,6 +155,7 @@ class GoalFragment : Fragment() {
         return "$count $word"
     }
 
+    // Очистка binding при закрытии экрана
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

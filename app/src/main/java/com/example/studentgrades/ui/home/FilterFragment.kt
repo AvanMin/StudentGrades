@@ -25,11 +25,13 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+// Экран фильтрации и сортировки оценок на главном экране
 class FilterFragment : Fragment() {
 
     private var _binding: FragmentFilterBinding? = null
     private val binding get() = _binding!!
 
+    // Переменные состояния выбранных параметров фильтра и сортировки
     private var disciplines: List<Discipline> = emptyList()
     private var selectedDisciplineId: Long? = null
     private var selectedWorkType: String? = null
@@ -39,6 +41,7 @@ class FilterFragment : Fragment() {
 
     private val dateFormatter = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
 
+    // Создание разметки экрана из XML
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -62,14 +65,17 @@ class FilterFragment : Fragment() {
             selectedSort = GradeSort.valueOf(sortName)
         }
 
+        // Возврат назад без сохранения изменений
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
+        // Инициализация списка предметов, кнопок фильтров, календаря и сортировки
         loadDisciplines()
         setupWorkTypeButtons()
         setupDatePickers()
         setupSortButtons()
         updateUiState()
 
+        // Упаковка выбранных параметров в Bundle и передача обратно на главный экран
         binding.btnApply.setOnClickListener {
             val result = Bundle().apply {
                 putLong("disciplineId", selectedDisciplineId ?: -1L)
@@ -84,6 +90,7 @@ class FilterFragment : Fragment() {
             findNavController().popBackStack()
         }
 
+        // Полный сброс всех фильтров и сортировки к значениям по умолчанию
         binding.btnReset.setOnClickListener {
             selectedDisciplineId = null
             selectedWorkType = null
@@ -97,6 +104,7 @@ class FilterFragment : Fragment() {
         }
     }
 
+    // Загрузка списка дисциплин из БД и открытие диалога выбора предмета
     private fun loadDisciplines() {
         val db = AppDatabase.getInstance(requireContext().applicationContext)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -123,6 +131,7 @@ class FilterFragment : Fragment() {
         }
     }
 
+    // Назначение обработчиков на кнопки выбора типа учебной работы
     private fun setupWorkTypeButtons() {
         binding.btnTypeAll.setOnClickListener { selectedWorkType = null; updateUiState() }
         binding.btnTypeControl.setOnClickListener { selectedWorkType = "Контрольная"; updateUiState() }
@@ -131,6 +140,7 @@ class FilterFragment : Fragment() {
         binding.btnTypeLab.setOnClickListener { selectedWorkType = "Лабораторная"; updateUiState() }
     }
 
+    // Отображение сохранённых дат и открытие календаря при нажатии на поля «с» и «по»
     private fun setupDatePickers() {
         selectedDateFrom?.let { binding.tvDateFrom.text = dateFormatter.format(Date(it)) }
         selectedDateTo?.let { binding.tvDateTo.text = dateFormatter.format(Date(it)) }
@@ -150,6 +160,7 @@ class FilterFragment : Fragment() {
         }
     }
 
+    // Переключение направления сортировки по дате или по значению оценки
     private fun setupSortButtons() {
         binding.btnSortByDate.setOnClickListener {
             selectedSort = if (selectedSort == GradeSort.BY_DATE_DESC) {
@@ -170,6 +181,7 @@ class FilterFragment : Fragment() {
         }
     }
 
+    // Обновление визуального выделения активных кнопок и текста подсказки сортировки
     private fun updateUiState() {
         stylePillButton(binding.btnTypeAll, selectedWorkType == null)
         stylePillButton(binding.btnTypeControl, selectedWorkType == "Контрольная")
@@ -189,6 +201,7 @@ class FilterFragment : Fragment() {
         }
     }
 
+    // Оформление кнопки-пилюли в активном или неактивном состоянии
     private fun stylePillButton(button: MaterialButton, isSelected: Boolean) {
         val ctx = requireContext()
         if (isSelected) {
@@ -205,6 +218,7 @@ class FilterFragment : Fragment() {
         }
     }
 
+    // Открытие календаря и приведение времени к началу (00:00:00) или концу (23:59:59) суток
     private fun showDatePicker(initialTs: Long?, isEndOfDay: Boolean, onSelected: (Long) -> Unit) {
         val cal = Calendar.getInstance().apply {
             if (initialTs != null) timeInMillis = initialTs
@@ -234,6 +248,7 @@ class FilterFragment : Fragment() {
         ).show()
     }
 
+    // Очистка binding при закрытии экрана
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

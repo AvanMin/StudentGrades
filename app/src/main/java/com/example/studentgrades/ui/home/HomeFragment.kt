@@ -245,6 +245,13 @@ class HomeFragment : Fragment() {
                 } else {
                     String.format(Locale.US, "%.2f", totalAvg)
                 }
+
+                val weightedAvg = Sprint4Analytics.calculateWeightedAverage(allFilteredGrades)
+                binding.tvWeightedAvg.text = if (weightedAvg == null) {
+                    "—"
+                } else {
+                    String.format(Locale.US, "%.2f", weightedAvg)
+                }
             }
         }
     }

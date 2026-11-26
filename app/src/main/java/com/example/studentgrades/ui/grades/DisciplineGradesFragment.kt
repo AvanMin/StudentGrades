@@ -34,21 +34,25 @@ class DisciplineGradesFragment : Fragment() {
     private var _binding: FragmentDisciplineGradesBinding? = null
     private val binding get() = _binding!!
 
+    // Переменные состояния: ID выбранного предмета, его модель, счётчик оценок и адаптер списка
     private var disciplineId: Long = -1L
     private var currentDiscipline: Discipline? = null
     private var currentGradesCount: Int = 0
     private lateinit var adapter: GradesAdapter
     private val dateFormatter = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
 
+    // Реактивные потоки текущего фильтра и сортировки для оценок внутри предмета
     private lateinit var filterState: MutableStateFlow<GradeFilter>
     private val sortState = MutableStateFlow(GradeSort.BY_DATE_DESC)
 
+    // Получение ID дисциплины из аргументов навигации и инициализация фильтра
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         disciplineId = arguments?.getLong("disciplineId", -1L) ?: -1L
         filterState = MutableStateFlow(GradeFilter(disciplineId = disciplineId))
     }
 
+    // Создание разметки экрана из XML
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -59,11 +63,13 @@ class DisciplineGradesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Обработчики кнопок возврата назад, удаления предмета и открытия фильтров
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
         binding.headerBack.setOnClickListener { findNavController().popBackStack() }
         binding.btnDeleteDiscipline.setOnClickListener { confirmDeleteDiscipline() }
         binding.tvGradesInfo.setOnClickListener { openFilterDialog() }
 
+        // Настройка адаптера списка оценок с переходами на редактирование и удаление
         adapter = GradesAdapter(
             onEditClick = { grade ->
                 val args = bundleOf(
@@ -79,6 +85,7 @@ class DisciplineGradesFragment : Fragment() {
         )
         binding.rvGrades.adapter = adapter
 
+        // Переход на экран добавления новой оценки для текущей дисциплины
         binding.btnAddGradeBottom.setOnClickListener {
             val args = bundleOf(
                 "disciplineId" to disciplineId,
@@ -93,6 +100,7 @@ class DisciplineGradesFragment : Fragment() {
         loadDisciplineAndGrades()
     }
 
+    // Открытие нижней шторки (BottomSheet) с фильтрами и сортировкой оценок
     private fun openFilterDialog() {
         FilterGradesBottomSheet(
             currentFilter = filterState.value,
@@ -104,9 +112,11 @@ class DisciplineGradesFragment : Fragment() {
         ).show(childFragmentManager, "FilterGradesBottomSheet")
     }
 
+    // Загрузка данных о дисциплине и подписка на её оценки с учётом фильтров и сортировки
     private fun loadDisciplineAndGrades() {
         val db = AppDatabase.getInstance(requireContext().applicationContext)
         viewLifecycleOwner.lifecycleScope.launch {
+            // Запрос названия предмета и имени преподавателя в фоновом потоке
             val discipline = withContext(Dispatchers.IO) {
                 db.disciplineDao().getById(disciplineId)
             }
@@ -118,6 +128,7 @@ class DisciplineGradesFragment : Fragment() {
                     if (discipline.teacherName.isNullOrBlank()) View.GONE else View.VISIBLE
             }
 
+            // Объединение потока оценок из БД с фильтрами и сортировкой
             combine(
                 db.gradeDao().observeByDiscipline(disciplineId),
                 filterState,
@@ -126,6 +137,7 @@ class DisciplineGradesFragment : Fragment() {
                 val filtered = Sprint4Analytics.filterGrades(allGrades, filter)
                 Sprint4Analytics.sortGrades(filtered, sort)
             }.collect { grades ->
+                // Обновление списка оценок, среднего балла и счётчика на экране
                 currentGradesCount = grades.size
                 adapter.submitList(grades)
                 binding.tvEmptyGrades.visibility = if (grades.isEmpty()) View.VISIBLE else View.GONE
@@ -139,11 +151,13 @@ class DisciplineGradesFragment : Fragment() {
         }
     }
 
+    // Проверка, выбраны ли дополнительные фильтры (по типу работы или датам)
     private fun hasActiveSubFilters(): Boolean {
         val f = filterState.value
         return !f.workType.isNullOrBlank() || f.dateFrom != null || f.dateTo != null
     }
 
+    // Диалог подтверждения и удаление всей дисциплины из БД
     private fun confirmDeleteDiscipline() {
         val discipline = currentDiscipline ?: return
         val appContext = requireContext().applicationContext
@@ -171,6 +185,7 @@ class DisciplineGradesFragment : Fragment() {
             .show()
     }
 
+    // Диалог подтверждения и удаление одной конкретной оценки из БД
     private fun confirmDeleteGrade(grade: Grade) {
         val appContext = requireContext().applicationContext
         val formattedDate = dateFormatter.format(Date(grade.date))
@@ -186,6 +201,7 @@ class DisciplineGradesFragment : Fragment() {
             .show()
     }
 
+    // Очистка binding при уничтожении View экрана
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Корневой граф навигации приложения со стартовым экраном homeFragment -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
+    <!-- Главный экран со списком дисциплин и переходом к оценкам, добавлению оценки и фильтрам -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.studentgrades.ui.home.HomeFragment"
@@ -19,11 +21,13 @@
             app:destination="@id/filterFragment" />
     </fragment>
 
+    <!-- Экран выбора фильтров и сортировки оценок -->
     <fragment
         android:id="@+id/filterFragment"
         android:name="com.example.studentgrades.ui.home.FilterFragment"
         android:label="Фильтры" />
 
+    <!-- Экран оценок конкретной дисциплины (принимает disciplineId и ведёт на добавление/редактирование оценки) -->
     <fragment
         android:id="@+id/disciplineGradesFragment"
         android:name="com.example.studentgrades.ui.grades.DisciplineGradesFragment"
@@ -36,6 +40,7 @@
             app:destination="@id/addEditGradeFragment" />
     </fragment>
 
+    <!-- Экран добавления или редактирования оценки (принимает ID предмета и ID оценки, по умолчанию -1L) -->
     <fragment
         android:id="@+id/addEditGradeFragment"
         android:name="com.example.studentgrades.ui.addedit.AddEditGradeFragment"
@@ -50,16 +55,13 @@
             android:defaultValue="-1L" />
     </fragment>
 
+    <!-- Экран динамики успеваемости по месяцам -->
     <fragment
         android:id="@+id/dynamicsFragment"
         android:name="com.example.studentgrades.ui.dynamics.DynamicsFragment"
         android:label="Динамика" />
 
-    <fragment
-        android:id="@+id/goalFragment"
-        android:name="com.example.studentgrades.ui.dynamics.DynamicsFragment"
-        android:label="Цель" />
-
+    <!-- Экран калькулятора целевого среднего балла -->
     <fragment
         android:id="@+id/goalFragment"
         android:name="com.example.studentgrades.ui.goal.GoalFragment"

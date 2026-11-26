@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Репозиторий для работы с локальным хранилищем дисциплин и оценок.
- * Инкапсулирует DAO-операции, валидацию данных и логику удаления связанных записей.
+- Репозиторий для работы с локальным хранилищем дисциплин и оценок.
+- Инкапсулирует DAO-операции, валидацию данных и логику удаления связанных записей.
  */
 class StudentGradesRepository(
     private val disciplineDao: DisciplineDao,
@@ -20,11 +20,13 @@ class StudentGradesRepository(
 
     // --- Операции с дисциплинами ---
 
+    // Реактивные потоки для наблюдения за списком предметов и предметов с оценками
     fun observeAllDisciplines(): Flow<List<Discipline>> = disciplineDao.observeAll()
 
     fun observeDisciplinesWithGrades(): Flow<List<DisciplineWithGrades>> =
         disciplineDao.observeAllWithGrades()
 
+    // Однократные запросы для получения всех дисциплин или одного предмета по ID
     suspend fun getAllDisciplines(): List<Discipline> = disciplineDao.getAll()
 
     suspend fun getDisciplineById(id: Long): Discipline? = disciplineDao.getById(id)
@@ -32,6 +34,7 @@ class StudentGradesRepository(
     suspend fun getDisciplineWithGrades(id: Long): DisciplineWithGrades? =
         disciplineDao.getWithGradesById(id)
 
+    // Валидация названия и сохранение новой дисциплины в БД
     suspend fun addDiscipline(name: String, teacherName: String? = null): Long {
         val cleanName = name.trim()
         require(cleanName.isNotEmpty()) { "Название дисциплины не может быть пустым" }
@@ -39,6 +42,7 @@ class StudentGradesRepository(
         return disciplineDao.insert(Discipline(name = cleanName, teacherName = cleanTeacher))
     }
 
+    // Проверка и обновление данных существующей дисциплины
     suspend fun updateDiscipline(discipline: Discipline): Boolean {
         val cleanName = discipline.name.trim()
         require(cleanName.isNotEmpty()) { "Название дисциплины не может быть пустым" }
@@ -48,13 +52,14 @@ class StudentGradesRepository(
         ) > 0
     }
 
+    // Подсчёт количества оценок по конкретному предмету
     suspend fun getGradesCountForDiscipline(disciplineId: Long): Int =
         gradeDao.getCountByDiscipline(disciplineId)
 
     /**
-     * Удаление дисциплины с осознанной обработкой связи 1-N:
-     * если [allowCascade] == false и у дисциплины есть оценки, возвращается [DeleteDisciplineResult.HasGrades].
-     * если [allowCascade] == true или оценок нет — дисциплина удаляется (вместе со связанными оценками по FK CASCADE).
+    - Удаление дисциплины с осознанной обработкой связи 1-N:
+    - если [allowCascade] == false и у дисциплины есть оценки, возвращается [DeleteDisciplineResult.HasGrades].
+    - если [allowCascade] == true или оценок нет — дисциплина удаляется (вместе со связанными оценками по FK CASCADE).
      */
     suspend fun deleteDiscipline(
         disciplineId: Long,
@@ -74,6 +79,7 @@ class StudentGradesRepository(
 
     // --- Операции с оценками ---
 
+    // Реактивные потоки для наблюдения за всеми оценками, оценками предмета или с фильтром
     fun observeAllGrades(): Flow<List<Grade>> = gradeDao.observeAll()
 
     fun observeGradesByDiscipline(disciplineId: Long): Flow<List<Grade>> =
@@ -84,6 +90,7 @@ class StudentGradesRepository(
             applyFilterAndSort(grades, filter)
         }
 
+    // Однократные запросы на чтение оценок из БД
     suspend fun getAllGrades(): List<Grade> = gradeDao.getAll()
 
     suspend fun getGradesByDiscipline(disciplineId: Long): List<Grade> =
@@ -94,6 +101,7 @@ class StudentGradesRepository(
 
     suspend fun getGradeById(gradeId: Long): Grade? = gradeDao.getById(gradeId)
 
+    // Валидация параметров и добавление новой оценки в БД
     suspend fun addGrade(
         disciplineId: Long,
         value: Int,
@@ -114,6 +122,7 @@ class StudentGradesRepository(
         )
     }
 
+    // Валидация и обновление существующей оценки
     suspend fun updateGrade(grade: Grade): Boolean {
         validateGradeInput(grade.disciplineId, grade.value, grade.workType)
         val cleanComment = grade.comment?.trim()?.takeIf { it.isNotEmpty() }
@@ -125,12 +134,14 @@ class StudentGradesRepository(
         ) > 0
     }
 
+    // Удаление оценки по объекту или по идентификатору
     suspend fun deleteGrade(grade: Grade): Boolean = gradeDao.delete(grade) > 0
 
     suspend fun deleteGradeById(gradeId: Long): Boolean = gradeDao.deleteById(gradeId) > 0
 
     // --- Агрегация и статистика ---
 
+    // Запросы среднего балла по предмету, общего среднего балла и количества оценок
     suspend fun getDisciplineAverage(disciplineId: Long): Double? =
         gradeDao.getAverageByDiscipline(disciplineId)
 
@@ -140,6 +151,7 @@ class StudentGradesRepository(
 
     // --- Внутренние вспомогательные методы ---
 
+    // Фильтрация списка оценок по критериям и сортировка по дате или баллу
     private fun applyFilterAndSort(grades: List<Grade>, filter: GradeFilter): List<Grade> {
         val filtered = grades.filter { grade ->
             val matchesDiscipline = filter.disciplineId == null ||
@@ -169,6 +181,7 @@ class StudentGradesRepository(
         }
     }
 
+    // Проверка корректности оценки (2–5), непустого типа работы и существования предмета в БД
     private suspend fun validateGradeInput(disciplineId: Long, value: Int, workType: String) {
         require(GradeCalculator.isValidGrade(value)) {
             "Оценка должна находиться в диапазоне от ${GradeCalculator.MIN_GRADE} до ${GradeCalculator.MAX_GRADE}"
@@ -180,6 +193,7 @@ class StudentGradesRepository(
     }
 }
 
+// Варианты сортировки оценок в репозитории
 enum class GradeSortOption {
     DATE_DESC,
     DATE_ASC,
@@ -187,6 +201,7 @@ enum class GradeSortOption {
     VALUE_ASC
 }
 
+// Модель фильтрации с вычисляемым флагом активности хотя бы одного критерия
 data class GradeFilter(
     val disciplineId: Long? = null,
     val workType: String? = null,
@@ -202,6 +217,7 @@ data class GradeFilter(
                 sortBy != GradeSortOption.DATE_DESC
 }
 
+// Варианты результата удаления дисциплины (успешно, есть связанные оценки или не найдена)
 sealed interface DeleteDisciplineResult {
     data class Deleted(val deletedGradesCount: Int) : DeleteDisciplineResult
     data class HasGrades(val gradesCount: Int) : DeleteDisciplineResult

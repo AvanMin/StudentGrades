@@ -5,11 +5,12 @@ import com.example.studentgrades.data.model.Grade
 import java.util.Calendar
 
 /**
- * Начальный тестовый набор данных для первичной инициализации БД
- * и проверки расчётов, связей 1-N и сохранения после перезапуска.
+- Начальный тестовый набор данных для первичной инициализации БД
+- и проверки расчётов, связей 1-N и сохранения после перезапуска.
  */
 object SeedData {
 
+    // Формирование списка стартовых дисциплин для заполнения пустой базы данных
     fun getInitialDisciplines(): List<Discipline> = listOf(
         Discipline(name = "Разработка мобильных приложений", teacherName = "Смирнов А.В."),
         Discipline(name = "Базы данных", teacherName = "Ковалёва Е.И."),
@@ -17,6 +18,7 @@ object SeedData {
         Discipline(name = "Компьютерные сети", teacherName = null)
     )
 
+    // Формирование списка тестовых оценок, привязанных к переданным ID дисциплин
     fun getInitialGrades(disciplineIds: List<Long>): List<Grade> {
         if (disciplineIds.size < 4) return emptyList()
         val mobileId = disciplineIds[0]
@@ -105,6 +107,7 @@ object SeedData {
         )
     }
 
+    // Вспомогательный метод: перевод года, месяца (1–12) и дня в миллисекунды (Unix timestamp)
     private fun timestamp(year: Int, monthOneBased: Int, day: Int): Long {
         return Calendar.getInstance().apply {
             set(Calendar.YEAR, year)

@@ -15,6 +15,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+// Нижняя выезжающая шторка (BottomSheet) для фильтрации и сортировки оценок внутри предмета
 class FilterGradesBottomSheet(
     private val currentFilter: GradeFilter,
     private val currentSort: GradeSort,
@@ -24,10 +25,12 @@ class FilterGradesBottomSheet(
     private var _binding: BottomSheetFilterGradesBinding? = null
     private val binding get() = _binding!!
 
+    // Переменные для хранения выбранных границ периода дат (в миллисекундах)
     private var selectedDateFrom: Long? = currentFilter.dateFrom
     private var selectedDateTo: Long? = currentFilter.dateTo
     private val dateFormatter = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
 
+    // Создание разметки шторки из XML
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -40,9 +43,11 @@ class FilterGradesBottomSheet(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Восстановление ранее выбранных фильтров и настройка полей выбора даты
         restoreCurrentState()
         setupDatePickers()
 
+        // Сбор выбранных чипов и передача новых параметров фильтрации и сортировки
         binding.btnApplyFilter.setOnClickListener {
             val workType = when (binding.chipGroupWorkType.checkedChipId) {
                 R.id.chipWorkControl -> "Контрольная"
@@ -70,6 +75,7 @@ class FilterGradesBottomSheet(
             dismiss()
         }
 
+        // Полный сброс фильтров и сортировки к значениям по умолчанию
         binding.btnResetFilter.setOnClickListener {
             onApply(
                 GradeFilter(disciplineId = currentFilter.disciplineId),
@@ -79,6 +85,7 @@ class FilterGradesBottomSheet(
         }
     }
 
+    // Установка активных чипов и текста дат в соответствии с текущим состоянием
     private fun restoreCurrentState() {
         val workChipId = when (currentFilter.workType) {
             "Контрольная" -> R.id.chipWorkControl
@@ -101,6 +108,7 @@ class FilterGradesBottomSheet(
         selectedDateTo?.let { binding.etDateTo.setText(dateFormatter.format(Date(it))) }
     }
 
+    // Назначение обработчиков нажатия на поля «Дата с» и «Дата по»
     private fun setupDatePickers() {
         binding.etDateFrom.setOnClickListener {
             showDatePicker(selectedDateFrom, isEndOfDay = false) { timestamp ->
@@ -117,6 +125,7 @@ class FilterGradesBottomSheet(
         }
     }
 
+    // Открытие календаря и нормализация времени на начало (00:00:00) или конец (23:59:59) дня
     private fun showDatePicker(
         initialTimestamp: Long?,
         isEndOfDay: Boolean,
@@ -151,6 +160,7 @@ class FilterGradesBottomSheet(
         ).show()
     }
 
+    // Очистка binding при закрытии шторки
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
