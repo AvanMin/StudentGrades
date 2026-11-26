@@ -8,6 +8,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -16,7 +17,12 @@ import com.example.studentgrades.R
 import com.example.studentgrades.data.AppDatabase
 import com.example.studentgrades.data.model.Discipline
 import com.example.studentgrades.databinding.FragmentHomeBinding
+import com.example.studentgrades.domain.GradeFilter
+import com.example.studentgrades.domain.GradeSort
+import com.example.studentgrades.domain.Sprint4Analytics
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -29,6 +35,9 @@ class HomeFragment : Fragment() {
     private lateinit var adapter: DisciplinesAdapter
     private var hasDisciplines: Boolean = false
 
+    private val currentFilter = MutableStateFlow(GradeFilter())
+    private val currentSort = MutableStateFlow(GradeSort.BY_DATE_DESC)
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -38,6 +47,42 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Верхняя кнопка полного окна фильтров
+        binding.btnFilter.setOnClickListener {
+            val f = currentFilter.value
+            val args = bundleOf(
+                "disciplineId" to (f.disciplineId ?: -1L),
+                "workType" to f.workType,
+                "dateFrom" to (f.dateFrom ?: -1L),
+                "dateTo" to (f.dateTo ?: -1L),
+                "sort" to currentSort.value.name
+            )
+            findNavController().navigate(R.id.action_homeFragment_to_filterFragment, args)
+        }
+
+        // Быстрая сортировка рядом с количеством предметов
+        binding.btnQuickSort.setOnClickListener {
+            showQuickSortDialog()
+        }
+
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<Bundle>("filter_result")
+            ?.observe(viewLifecycleOwner) { bundle ->
+                val dId = bundle.getLong("disciplineId", -1L)
+                val from = bundle.getLong("dateFrom", -1L)
+                val to = bundle.getLong("dateTo", -1L)
+                currentSort.value = GradeSort.valueOf(
+                    bundle.getString("sort", GradeSort.BY_DATE_DESC.name)
+                )
+                currentFilter.value = GradeFilter(
+                    disciplineId = if (dId == -1L) null else dId,
+                    workType = bundle.getString("workType"),
+                    dateFrom = if (from == -1L) null else from,
+                    dateTo = if (to == -1L) null else to
+                )
+            }
 
         adapter = DisciplinesAdapter { discipline ->
             val args = bundleOf("disciplineId" to discipline.id)
@@ -73,29 +118,113 @@ class HomeFragment : Fragment() {
         observeData()
     }
 
+    private fun showQuickSortDialog() {
+        val options = arrayOf(
+            "По дате (новые сначала)",
+            "По дате (старые сначала)",
+            "По баллу (высокие сначала)",
+            "По баллу (низкие сначала)"
+        )
+        val sortValues = arrayOf(
+            GradeSort.BY_DATE_DESC,
+            GradeSort.BY_DATE_ASC,
+            GradeSort.BY_VALUE_DESC,
+            GradeSort.BY_VALUE_ASC
+        )
+        val checkedIndex = sortValues.indexOf(currentSort.value).coerceAtLeast(0)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Сортировка дисциплин")
+            .setSingleChoiceItems(options, checkedIndex) { dialog, which ->
+                currentSort.value = sortValues[which]
+                dialog.dismiss()
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
+    }
+
     private fun observeData() {
         val db = AppDatabase.getInstance(requireContext().applicationContext)
         viewLifecycleOwner.lifecycleScope.launch {
-            db.disciplineDao().observeAllWithGrades().collect { items ->
+            combine(
+                db.disciplineDao().observeAllWithGrades(),
+                currentFilter,
+                currentSort
+            ) { items, filter, sort ->
+                Triple(items, filter, sort)
+            }.collect { (items, filter, sort) ->
                 hasDisciplines = items.isNotEmpty()
+                updateFilterAndSortLabels(filter, sort)
 
-                val uiItems = items.map { dwg ->
-                    val grades = dwg.grades
-                    val avg = if (grades.isEmpty()) null else grades.map { it.value }.average()
-                    DisciplineUiItem(dwg.discipline, grades.size, avg)
+                val isFilterActive = filter.disciplineId != null ||
+                        !filter.workType.isNullOrBlank() ||
+                        filter.dateFrom != null ||
+                        filter.dateTo != null
+
+                val filteredItems = items
+                    .filter { filter.disciplineId == null || it.discipline.id == filter.disciplineId }
+                    .mapNotNull { dwg ->
+                        val matchingGrades = Sprint4Analytics.filterGrades(dwg.grades, filter)
+                        if (isFilterActive && filter.disciplineId == null && matchingGrades.isEmpty()) {
+                            null
+                        } else {
+                            val sortedGrades = Sprint4Analytics.sortGrades(matchingGrades, sort)
+                            val avg = Sprint4Analytics.calculateAverage(sortedGrades)
+                            val uiItem = DisciplineUiItem(dwg.discipline, sortedGrades.size, avg)
+                            uiItem to sortedGrades
+                        }
+                    }
+
+                val sortedItems = when (sort) {
+                    GradeSort.BY_DATE_DESC -> filteredItems.sortedByDescending { (_, grades) ->
+                        grades.maxOfOrNull { it.date } ?: Long.MIN_VALUE
+                    }
+                    GradeSort.BY_DATE_ASC -> filteredItems.sortedBy { (_, grades) ->
+                        grades.minOfOrNull { it.date } ?: Long.MAX_VALUE
+                    }
+                    GradeSort.BY_VALUE_DESC -> filteredItems.sortedByDescending { (uiItem, _) ->
+                        uiItem.average ?: -1.0
+                    }
+                    GradeSort.BY_VALUE_ASC -> filteredItems.sortedBy { (uiItem, _) ->
+                        uiItem.average ?: Double.MAX_VALUE
+                    }
                 }
+
+                val uiItems = sortedItems.map { it.first }
+                val allFilteredGrades = sortedItems.flatMap { it.second }
 
                 adapter.submitList(uiItems)
                 binding.tvEmptyHome.visibility = if (uiItems.isEmpty()) View.VISIBLE else View.GONE
                 binding.tvDisciplinesCount.text = "Дисциплин: ${uiItems.size}"
                 binding.tvSubjectsBadge.text = formatSubjectsCount(uiItems.size)
+                binding.tvGradesCount.text = "Оценок: ${allFilteredGrades.size}"
 
-                val allGrades = items.flatMap { it.grades }
-                binding.tvGradesCount.text = "Оценок: ${allGrades.size}"
-
-                binding.tvTotalAvg.text = if (allGrades.isEmpty()) "—"
-                else String.format(Locale.US, "%.2f", allGrades.map { it.value }.average())
+                val totalAvg = Sprint4Analytics.calculateAverage(allFilteredGrades)
+                binding.tvTotalAvg.text = if (totalAvg == null) "—"
+                else String.format(Locale.US, "%.2f", totalAvg)
             }
+        }
+    }
+
+    private fun updateFilterAndSortLabels(filter: GradeFilter, sort: GradeSort) {
+        binding.tvQuickSort.text = when (sort) {
+            GradeSort.BY_DATE_DESC -> "⇅ По дате ↓"
+            GradeSort.BY_DATE_ASC -> "⇅ По дате ↑"
+            GradeSort.BY_VALUE_DESC -> "⇅ По баллу ↓"
+            GradeSort.BY_VALUE_ASC -> "⇅ По баллу ↑"
+        }
+
+        val isFilterActive = filter.disciplineId != null ||
+                !filter.workType.isNullOrBlank() ||
+                filter.dateFrom != null ||
+                filter.dateTo != null
+        val ctx = requireContext()
+        if (isFilterActive) {
+            binding.btnFilter.setCardBackgroundColor(0xFFE8F0FE.toInt())
+            binding.btnFilter.strokeColor = ContextCompat.getColor(ctx, R.color.primary_blue)
+        } else {
+            binding.btnFilter.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.bg_card))
+            binding.btnFilter.strokeColor = ContextCompat.getColor(ctx, R.color.stroke_subtle)
         }
     }
 

@@ -15,13 +15,20 @@ import com.example.studentgrades.data.AppDatabase
 import com.example.studentgrades.data.model.Discipline
 import com.example.studentgrades.data.model.Grade
 import com.example.studentgrades.databinding.FragmentDisciplineGradesBinding
+import com.example.studentgrades.domain.GradeFilter
+import com.example.studentgrades.domain.GradeSort
+import com.example.studentgrades.domain.Sprint4Analytics
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DisciplineGradesFragment : Fragment() {
 
     private var _binding: FragmentDisciplineGradesBinding? = null
@@ -33,9 +40,13 @@ class DisciplineGradesFragment : Fragment() {
     private lateinit var adapter: GradesAdapter
     private val dateFormatter = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
 
+    private lateinit var filterState: MutableStateFlow<GradeFilter>
+    private val sortState = MutableStateFlow(GradeSort.BY_DATE_DESC)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         disciplineId = arguments?.getLong("disciplineId", -1L) ?: -1L
+        filterState = MutableStateFlow(GradeFilter(disciplineId = disciplineId))
     }
 
     override fun onCreateView(
@@ -51,6 +62,7 @@ class DisciplineGradesFragment : Fragment() {
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
         binding.headerBack.setOnClickListener { findNavController().popBackStack() }
         binding.btnDeleteDiscipline.setOnClickListener { confirmDeleteDiscipline() }
+        binding.tvGradesInfo.setOnClickListener { openFilterDialog() }
 
         adapter = GradesAdapter(
             onEditClick = { grade ->
@@ -81,6 +93,17 @@ class DisciplineGradesFragment : Fragment() {
         loadDisciplineAndGrades()
     }
 
+    private fun openFilterDialog() {
+        FilterGradesBottomSheet(
+            currentFilter = filterState.value,
+            currentSort = sortState.value,
+            onApply = { newFilter, newSort ->
+                filterState.value = newFilter
+                sortState.value = newSort
+            }
+        ).show(childFragmentManager, "FilterGradesBottomSheet")
+    }
+
     private fun loadDisciplineAndGrades() {
         val db = AppDatabase.getInstance(requireContext().applicationContext)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -95,21 +118,30 @@ class DisciplineGradesFragment : Fragment() {
                     if (discipline.teacherName.isNullOrBlank()) View.GONE else View.VISIBLE
             }
 
-            db.gradeDao().observeByDiscipline(disciplineId).collect { grades ->
+            combine(
+                db.gradeDao().observeByDiscipline(disciplineId),
+                filterState,
+                sortState
+            ) { allGrades, filter, sort ->
+                val filtered = Sprint4Analytics.filterGrades(allGrades, filter)
+                Sprint4Analytics.sortGrades(filtered, sort)
+            }.collect { grades ->
                 currentGradesCount = grades.size
                 adapter.submitList(grades)
                 binding.tvEmptyGrades.visibility = if (grades.isEmpty()) View.VISIBLE else View.GONE
 
-                if (grades.isEmpty()) {
-                    binding.tvDisciplineAvg.text = "—"
-                    binding.tvGradesInfo.text = "Средний балл • 0 оценок"
-                } else {
-                    val avg = grades.map { it.value }.average()
-                    binding.tvDisciplineAvg.text = String.format(Locale.US, "%.2f", avg)
-                    binding.tvGradesInfo.text = "Средний балл • ${grades.size} оценок"
-                }
+                val filterHint = if (hasActiveSubFilters()) " (фильтр)" else ""
+                val avg = Sprint4Analytics.calculateAverage(grades)
+
+                binding.tvDisciplineAvg.text = if (avg == null) "—" else Sprint4Analytics.formatAverage(avg)
+                binding.tvGradesInfo.text = "Средний балл • ${grades.size} оценок$filterHint"
             }
         }
+    }
+
+    private fun hasActiveSubFilters(): Boolean {
+        val f = filterState.value
+        return !f.workType.isNullOrBlank() || f.dateFrom != null || f.dateTo != null
     }
 
     private fun confirmDeleteDiscipline() {

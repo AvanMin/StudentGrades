@@ -14,7 +14,15 @@
         <action
             android:id="@+id/action_homeFragment_to_addEditGradeFragment"
             app:destination="@id/addEditGradeFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_filterFragment"
+            app:destination="@id/filterFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/filterFragment"
+        android:name="com.example.studentgrades.ui.home.FilterFragment"
+        android:label="Фильтры" />
 
     <fragment
         android:id="@+id/disciplineGradesFragment"
@@ -50,5 +58,10 @@
     <fragment
         android:id="@+id/goalFragment"
         android:name="com.example.studentgrades.ui.dynamics.DynamicsFragment"
+        android:label="Цель" />
+
+    <fragment
+        android:id="@+id/goalFragment"
+        android:name="com.example.studentgrades.ui.goal.GoalFragment"
         android:label="Цель" />
 </navigation>

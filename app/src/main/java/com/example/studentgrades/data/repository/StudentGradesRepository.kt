@@ -7,6 +7,7 @@ import com.example.studentgrades.data.model.DisciplineWithGrades
 import com.example.studentgrades.data.model.Grade
 import com.example.studentgrades.domain.GradeCalculator
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Репозиторий для работы с локальным хранилищем дисциплин и оценок.
@@ -78,10 +79,18 @@ class StudentGradesRepository(
     fun observeGradesByDiscipline(disciplineId: Long): Flow<List<Grade>> =
         gradeDao.observeByDiscipline(disciplineId)
 
+    fun observeFilteredGrades(filter: GradeFilter): Flow<List<Grade>> =
+        gradeDao.observeAll().map { grades ->
+            applyFilterAndSort(grades, filter)
+        }
+
     suspend fun getAllGrades(): List<Grade> = gradeDao.getAll()
 
     suspend fun getGradesByDiscipline(disciplineId: Long): List<Grade> =
         gradeDao.getByDiscipline(disciplineId)
+
+    suspend fun getFilteredGrades(filter: GradeFilter): List<Grade> =
+        applyFilterAndSort(gradeDao.getAll(), filter)
 
     suspend fun getGradeById(gradeId: Long): Grade? = gradeDao.getById(gradeId)
 
@@ -129,6 +138,37 @@ class StudentGradesRepository(
 
     suspend fun getTotalGradesCount(): Int = gradeDao.getTotalCount()
 
+    // --- Внутренние вспомогательные методы ---
+
+    private fun applyFilterAndSort(grades: List<Grade>, filter: GradeFilter): List<Grade> {
+        val filtered = grades.filter { grade ->
+            val matchesDiscipline = filter.disciplineId == null ||
+                    grade.disciplineId == filter.disciplineId
+
+            val matchesWorkType = filter.workType.isNullOrBlank() ||
+                    grade.workType.equals(filter.workType.trim(), ignoreCase = true)
+
+            val matchesDateFrom = filter.dateFrom == null ||
+                    grade.date >= filter.dateFrom
+
+            val matchesDateTo = filter.dateTo == null ||
+                    grade.date <= filter.dateTo
+
+            matchesDiscipline && matchesWorkType && matchesDateFrom && matchesDateTo
+        }
+
+        return when (filter.sortBy) {
+            GradeSortOption.DATE_DESC -> filtered.sortedByDescending { it.date }
+            GradeSortOption.DATE_ASC -> filtered.sortedBy { it.date }
+            GradeSortOption.VALUE_DESC -> filtered.sortedWith(
+                compareByDescending<Grade> { it.value }.thenByDescending { it.date }
+            )
+            GradeSortOption.VALUE_ASC -> filtered.sortedWith(
+                compareBy<Grade> { it.value }.thenByDescending { it.date }
+            )
+        }
+    }
+
     private suspend fun validateGradeInput(disciplineId: Long, value: Int, workType: String) {
         require(GradeCalculator.isValidGrade(value)) {
             "Оценка должна находиться в диапазоне от ${GradeCalculator.MIN_GRADE} до ${GradeCalculator.MAX_GRADE}"
@@ -138,6 +178,28 @@ class StudentGradesRepository(
             "Дисциплина с id=$disciplineId не найдена"
         }
     }
+}
+
+enum class GradeSortOption {
+    DATE_DESC,
+    DATE_ASC,
+    VALUE_DESC,
+    VALUE_ASC
+}
+
+data class GradeFilter(
+    val disciplineId: Long? = null,
+    val workType: String? = null,
+    val dateFrom: Long? = null,
+    val dateTo: Long? = null,
+    val sortBy: GradeSortOption = GradeSortOption.DATE_DESC
+) {
+    val isActive: Boolean
+        get() = disciplineId != null ||
+                !workType.isNullOrBlank() ||
+                dateFrom != null ||
+                dateTo != null ||
+                sortBy != GradeSortOption.DATE_DESC
 }
 
 sealed interface DeleteDisciplineResult {
