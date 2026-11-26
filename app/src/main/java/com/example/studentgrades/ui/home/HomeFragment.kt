@@ -34,12 +34,15 @@ class HomeFragment : Fragment() {
 
     private lateinit var adapter: DisciplinesAdapter
     private var hasDisciplines: Boolean = false
+    private var cachedDisciplines: List<Discipline> = emptyList()
 
     private val currentFilter = MutableStateFlow(GradeFilter())
     private val currentSort = MutableStateFlow(GradeSort.BY_DATE_DESC)
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
@@ -48,7 +51,6 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Верхняя кнопка полного окна фильтров
         binding.btnFilter.setOnClickListener {
             val f = currentFilter.value
             val args = bundleOf(
@@ -61,7 +63,6 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.action_homeFragment_to_filterFragment, args)
         }
 
-        // Быстрая сортировка рядом с количеством предметов
         binding.btnQuickSort.setOnClickListener {
             showQuickSortDialog()
         }
@@ -73,9 +74,8 @@ class HomeFragment : Fragment() {
                 val dId = bundle.getLong("disciplineId", -1L)
                 val from = bundle.getLong("dateFrom", -1L)
                 val to = bundle.getLong("dateTo", -1L)
-                currentSort.value = GradeSort.valueOf(
-                    bundle.getString("sort", GradeSort.BY_DATE_DESC.name)
-                )
+                val sortName = bundle.getString("sort") ?: GradeSort.BY_DATE_DESC.name
+                currentSort.value = GradeSort.valueOf(sortName)
                 currentFilter.value = GradeFilter(
                     disciplineId = if (dId == -1L) null else dId,
                     workType = bundle.getString("workType"),
@@ -123,7 +123,8 @@ class HomeFragment : Fragment() {
             "По дате (новые сначала)",
             "По дате (старые сначала)",
             "По баллу (высокие сначала)",
-            "По баллу (низкие сначала)"
+            "По баллу (низкие сначала)",
+            "По одной дисциплине..."
         )
         val sortValues = arrayOf(
             GradeSort.BY_DATE_DESC,
@@ -131,12 +132,50 @@ class HomeFragment : Fragment() {
             GradeSort.BY_VALUE_DESC,
             GradeSort.BY_VALUE_ASC
         )
-        val checkedIndex = sortValues.indexOf(currentSort.value).coerceAtLeast(0)
+
+        val checkedIndex = if (currentFilter.value.disciplineId != null) {
+            4
+        } else {
+            sortValues.indexOf(currentSort.value).coerceAtLeast(0)
+        }
 
         AlertDialog.Builder(requireContext())
             .setTitle("Сортировка дисциплин")
             .setSingleChoiceItems(options, checkedIndex) { dialog, which ->
-                currentSort.value = sortValues[which]
+                dialog.dismiss()
+                if (which == 4) {
+                    showSingleDisciplinePickerDialog()
+                } else {
+                    currentSort.value = sortValues[which]
+                    if (currentFilter.value.disciplineId != null) {
+                        currentFilter.value = currentFilter.value.copy(disciplineId = null)
+                    }
+                }
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
+    }
+
+    private fun showSingleDisciplinePickerDialog() {
+        if (cachedDisciplines.isEmpty()) {
+            Toast.makeText(requireContext(), "Список дисциплин пуст", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val names = arrayOf("Все дисциплины") + cachedDisciplines.map { it.name }.toTypedArray()
+        val currentId = currentFilter.value.disciplineId
+        val checkedIndex = if (currentId == null) {
+            0
+        } else {
+            val idx = cachedDisciplines.indexOfFirst { it.id == currentId }
+            if (idx >= 0) idx + 1 else 0
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Выберите дисциплину")
+            .setSingleChoiceItems(names, checkedIndex) { dialog, which ->
+                val selectedId = if (which == 0) null else cachedDisciplines[which - 1].id
+                currentFilter.value = currentFilter.value.copy(disciplineId = selectedId)
                 dialog.dismiss()
             }
             .setNegativeButton("Отмена", null)
@@ -154,6 +193,7 @@ class HomeFragment : Fragment() {
                 Triple(items, filter, sort)
             }.collect { (items, filter, sort) ->
                 hasDisciplines = items.isNotEmpty()
+                cachedDisciplines = items.map { it.discipline }
                 updateFilterAndSortLabels(filter, sort)
 
                 val isFilterActive = filter.disciplineId != null ||
@@ -200,18 +240,26 @@ class HomeFragment : Fragment() {
                 binding.tvGradesCount.text = "Оценок: ${allFilteredGrades.size}"
 
                 val totalAvg = Sprint4Analytics.calculateAverage(allFilteredGrades)
-                binding.tvTotalAvg.text = if (totalAvg == null) "—"
-                else String.format(Locale.US, "%.2f", totalAvg)
+                binding.tvTotalAvg.text = if (totalAvg == null) {
+                    "—"
+                } else {
+                    String.format(Locale.US, "%.2f", totalAvg)
+                }
             }
         }
     }
 
     private fun updateFilterAndSortLabels(filter: GradeFilter, sort: GradeSort) {
-        binding.tvQuickSort.text = when (sort) {
-            GradeSort.BY_DATE_DESC -> "⇅ По дате ↓"
-            GradeSort.BY_DATE_ASC -> "⇅ По дате ↑"
-            GradeSort.BY_VALUE_DESC -> "⇅ По баллу ↓"
-            GradeSort.BY_VALUE_ASC -> "⇅ По баллу ↑"
+        val selectedDiscipline = cachedDisciplines.find { it.id == filter.disciplineId }
+        binding.tvQuickSort.text = if (selectedDiscipline != null) {
+            "⇅ ${selectedDiscipline.name}"
+        } else {
+            when (sort) {
+                GradeSort.BY_DATE_DESC -> "⇅ По дате ↓"
+                GradeSort.BY_DATE_ASC -> "⇅ По дате ↑"
+                GradeSort.BY_VALUE_DESC -> "⇅ По баллу ↓"
+                GradeSort.BY_VALUE_ASC -> "⇅ По баллу ↑"
+            }
         }
 
         val isFilterActive = filter.disciplineId != null ||
